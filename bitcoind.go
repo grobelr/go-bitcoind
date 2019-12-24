@@ -399,6 +399,18 @@ func (b *Bitcoind) GetRawTransaction(txId string, verbose bool) (rawTx interface
 	return
 }
 
+// DecodeRawTransaction returns raw transaction representation for given transaction id.
+func (b *Bitcoind) DecodeRawTransaction(hextx string) (rawTx RawTransaction, err error) {
+	r, err := b.client.call("decoderawtransaction", []interface{}{hextx})
+	if err = handleError(err, &r); err != nil {
+		return
+	}
+	var t RawTransaction
+	err = json.Unmarshal(r.Result, &t)
+	rawTx = t
+	return
+}
+
 // GetReceivedByAccount Returns the total amount received by addresses with [account] in
 // transactions with at least [minconf] confirmations. If [account] is set to all return
 // will include all transactions to all accounts
