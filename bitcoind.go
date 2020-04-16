@@ -4,6 +4,7 @@ package bitcoind
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 )
 
@@ -623,7 +624,7 @@ func (b *Bitcoind) ListTransactions(account string, count, from uint32) (transac
 }
 
 // ListUnspent returns array of unspent transaction inputs in the wallet.
-func (b *Bitcoind) ListUnspent(minconf, maxconf uint32) (transactions []Transaction, err error) {
+func (b *Bitcoind) ListUnspent(minconf, maxconf uint32) (transactions []TransactionsUnspent, err error) {
 	if maxconf > 999999 {
 		maxconf = 999999
 	}
@@ -746,6 +747,65 @@ func (b *Bitcoind) VerifyMessage(address, sign, message string) (success bool, e
 		return
 	}
 	err = json.Unmarshal(r.Result, &success)
+	return
+}
+
+// RawTxInput represents txs inputs on createrawtransaction
+type RawTxInput struct {
+	Txid string `json:"txid"`
+	Vout int    `json:"vout"`
+}
+
+// CreateRawTransaction
+func (b *Bitcoind) CreateRawTransaction(txinput []RawTxInput, txout map[string]float64) (success string, err error) {
+	r, err := b.client.call("createrawtransaction", []interface{}{txinput, txout})
+	if err = handleError(err, &r); err != nil {
+		return
+	}
+	err = json.Unmarshal(r.Result, &success)
+	return
+}
+
+type CompleteSignedTx struct {
+	Hex      string `json:"hex"`
+	Complete bool   `json:"complete"`
+}
+
+// SignRawTransactionWithKey
+func (b *Bitcoind) SignRawTransactionWithKey(rawtx string, privkeys []string) (success CompleteSignedTx, err error) {
+	r, err := b.client.call("signrawtransactionwithkey", []interface{}{rawtx, privkeys})
+	if err = handleError(err, &r); err != nil {
+		return
+	}
+	fmt.Println(r.Result)
+	err = json.Unmarshal(r.Result, &success)
+	return
+}
+
+// SendRawTransaction
+func (b *Bitcoind) SendRawTransaction(rawtx string) (txhash string, err error) {
+	r, err := b.client.call("sendrawtransaction", []interface{}{rawtx})
+	if err = handleError(err, &r); err != nil {
+		return
+	}
+	fmt.Println(r.Result)
+	err = json.Unmarshal(r.Result, &txhash)
+	return
+}
+
+type EstimateSmartFee struct {
+	FeeRate float64 `json:"feerate"`
+	Blocks  int     `json:"blocks"`
+}
+
+// SmartFee
+func (b *Bitcoind) SmartFee(blocks int) (result EstimateSmartFee, err error) {
+	r, err := b.client.call("estimatesmartfee", []interface{}{blocks})
+	if err = handleError(err, &r); err != nil {
+		return
+	}
+	fmt.Println(r.Result)
+	err = json.Unmarshal(r.Result, &result)
 	return
 }
 

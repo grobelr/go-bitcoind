@@ -1,15 +1,18 @@
 package main
 
 import (
-	"github.com/grobelr/go-bitcoind"
+	"fmt"
 	"log"
+
+	"github.com/grobelr/btcutil"
+	"github.com/grobelr/go-bitcoind"
 )
 
 const (
-	SERVER_HOST        = ""
-	SERVER_PORT        = 8334
-	USER               = "bitcoinrpc"
-	PASSWD             = "sss"
+	SERVER_HOST        = "127.0.0.1"
+	SERVER_PORT        = 18332
+	USER               = "btc"
+	PASSWD             = "btc"
 	USESSL             = false
 	WALLET_PASSPHRASE  = "p1"
 	WALLET_PASSPHRASE2 = "p2"
@@ -18,12 +21,28 @@ const (
 func main() {
 	bc, err := bitcoind.New(SERVER_HOST, SERVER_PORT, USER, PASSWD, USESSL)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("new client", err)
 	}
 
 	//walletpassphrase
-	err = bc.WalletPassphrase(WALLET_PASSPHRASE, 3600)
-	log.Println(err)
+	txs, err := bc.ListUnspent(0, 9999999)
+	log.Printf("%+v", txs)
+
+	//var t []bitcoind.RawTxInput
+	t := make([]bitcoind.RawTxInput, len(txs))
+	for i, k := range txs {
+		t[i].Txid = k.Txid
+		t[i].Vout = k.Vout
+		a, _ := btcutil.NewAmount(k.Amount)
+		fmt.Println(k.Amount)
+		fmt.Println(a)
+	}
+	fmt.Printf("%+v\n", t)
+
+	//a, err := bc.CreateRawTransaction(t, map[string]int{"2MsswrEyjipQjhtioKzLrcYnw22m5BXZQom": 1})
+
+	//fmt.Println(a)
+	//fmt.Println(err)
 
 	// backupwallet
 	/*
